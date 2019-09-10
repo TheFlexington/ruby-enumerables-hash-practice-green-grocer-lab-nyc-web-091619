@@ -1,51 +1,51 @@
-def consolidate_cart(cart) 
-  new_cart = {} 
-  cart.each do |items_array| 
-    items_array.each do |item, attribute_hash| 
-      new_cart[item] ||= attribute_hash 
-      new_cart[item][:count] ? new_cart[item][:count] += 1 :   
-      new_cart[item][:count] = 1 
-  end 
-end 
-new_cart 
+require 'pry'
+# pry is used to peek into a method as its being running. binding.pry is used within the method itself. use exit! to get out of a pry session.
+
+def consolidate_cart(cart)
+  final_hash = {}
+  cart.each do |element_hash|
+    element_name = element_hash.keys[0]
+
+    if final_hash.has_key?(element_name)
+      final_hash[element_name][:count] += 1
+    else
+      final_hash[element_name] = {
+        count: 1,
+        price: element_hash[element_name][:price],
+        clearance: element_hash[element_name][:clearance]
+      }
+    end
+  end
+  final_hash
 end
 
-def apply_coupons(cart, coupons) 
-  coupons.each do |coupon| 
-    coupon.each do |attribute, value| 
-      name = coupon[:item] 
-      if cart[name] && cart[name][:count] >= coupon[:num] 
-        if cart["#{name} W/COUPON"] 
-          cart["#{name} W/COUPON"][:count] += 1 
-        else 
-          cart["#{name} W/COUPON"] = {:price => coupon[:cost], 
-          :clearance => cart[name][:clearance], :count => 1} 
-        end 
-      cart[name][:count] -= coupon[:num] 
-    end 
-  end 
-end 
-  cart 
+def apply_coupons(cart, coupons)
+  coupons.each do |coupon|
+    item = coupon[:item]
+    if cart[item]
+      if cart[item] && cart[item][:count] >= coupon[:num] && !cart["#{item} W/COUPON"]
+        cart["#{item} W/COUPON"] = {price: coupon[:cost] / coupon[:num], clearance: cart[item][:clearance], count: coupon[:num]}
+        cart[item][:count] -= coupon[:num]
+      elsif cart[item][:count] >= coupon[:num] && cart["#{item} W/COUPON"]
+        cart["#{item} W/COUPON"][:count] += coupon[:num]
+        cart[item][:count] -= coupon[:num]
+      end
+    end
+  end
+  cart
 end
 
-def apply_clearance(cart) 
-  cart.each do |item, attribute_hash| 
-    if attribute_hash[:clearance] == true 
-      attribute_hash[:price] = (attribute_hash[:price] *
-      0.8).round(2) 
-    end 
-  end 
-cart 
+def apply_clearance(cart)
+  cart.each do |product_name, stats|
+    stats[:price] -= stats[:price] * 0.2 if stats[:clearance]
+  end
+  cart
 end
 
-def checkout(cart, coupons) 
-    total = 0 
-    new_cart = consolidate_cart(cart) 
-    coupon_cart = apply_coupons(new_cart, coupons) 
-    clearance_cart = apply_clearance(coupon_cart) 
-    clearance_cart.each do |item, attribute_hash| 
-      total += (attribute_hash[:price] * attribute_hash[:count])
-    end 
-    total = (total * 0.9) if total > 100
-  total
+def checkout(cart, coupons)
+  hash_cart = consolidate_cart(array)
+  applied_coupons = apply_coupons(hash_cart, coupons)
+  clearance = apply_clearance(applied_coupons)
+  total = clearance.reduce(0) { |acc, (key, value)| acc += value[:price] * value[:count] }
+  total > 100 ? total * 0.9 : total
 end
