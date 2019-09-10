@@ -1,6 +1,3 @@
-require 'pry'
-# pry is used to peek into a method as its being running. binding.pry is used within the method itself. use exit! to get out of a pry session.
-
 def consolidate_cart(cart)
   final_hash = {}
   cart.each do |element_hash|
